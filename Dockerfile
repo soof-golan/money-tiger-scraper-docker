@@ -46,4 +46,4 @@ RUN npm ci
 
 COPY src ${DIR}/
 
-CMD ["node","src/index.js"]
+CMD ["node","index.js"]
