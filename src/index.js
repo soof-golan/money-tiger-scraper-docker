@@ -1,4 +1,5 @@
 'use strict';
+const fs = require('fs/promises');
 const assert = require('node:assert/strict');
 const https = require('https');
 const axios = require('axios');
@@ -13,10 +14,30 @@ function checkForDemo() {
   }
 }
 
-function parse_args() {
+async function get_config(config_raw) {
+  let is_file;
+  try {
+    await fs.access(config_raw, fs.constants.R_OK);
+    is_file = true;
+  } catch (e){
+    is_file = false;
+  }
+  let content;
+  if (is_file) {
+    content = await fs.readFile(config_raw);
+  } else {
+    content = config_raw;
+  }
+  return JSON.parse(content);
+}
+
+async function parse_args() {
+
+  // Config can be either envvar or file
   const config_raw = process.env.CONFIG;
   assert(config_raw);
-  const config = JSON.parse(config_raw);
+  const config = await get_config(config_raw);
+
   const tiger_url = process.env.TIGER_URL || "https://real.money-tiger.tech/api/import";
   const api_token = process.env.API_TOKEN;
   assert(api_token);
@@ -51,7 +72,7 @@ async function scrape(company, credentials, show_browser) {
 
 async function main() {
   checkForDemo();
-  const {config, tiger_url, api_token, show_browser, selector} = parse_args();
+  const {config, tiger_url, api_token, show_browser, selector} = await parse_args();
   // Intentionally serial-waiting because I don't want two concurrent operations
   for (const {company, credentials} of config) {
     if (selector && ! new RegExp(selector).test(company)) {
