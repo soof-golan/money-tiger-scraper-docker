@@ -21,8 +21,9 @@ function parse_args() {
   const api_token = process.env.API_TOKEN;
   assert(api_token);
   const show_browser = Boolean(process.env.SHOW_BROWSER);
+  const selector = process.env.SELECTOR;
 
-  return {config, tiger_url, api_token, show_browser};
+  return {config, tiger_url, api_token, show_browser, selector};
 }
 
 async function sendResults(company, api_token, tiger_url, result) {
@@ -50,12 +51,16 @@ async function scrape(company, credentials, show_browser) {
 
 async function main() {
   checkForDemo();
-  const {config, tiger_url, api_token, show_browser} = parse_args();
+  const {config, tiger_url, api_token, show_browser, selector} = parse_args();
   // Intentionally serial-waiting because I don't want two concurrent operations
   for (const {company, credentials} of config) {
+    if (selector && ! new RegExp(selector).test(company)) {
+      continue;
+    }
     const scrapeResult = await scrape(company, credentials, show_browser);
+    console.log(`Company: ${company}, scrape success: ${scrapeResult.success}`);
     const res = await sendResults(company, api_token, tiger_url, scrapeResult);
-    console.log(res.status, res.data);
+    console.log("Report:", res.status, res.data);
   }
 }
 
