@@ -15,19 +15,14 @@ function checkForDemo() {
 }
 
 async function get_config(config_raw) {
-  let is_file;
   try {
-    await fs.access(config_raw, fs.constants.R_OK);
-    is_file = true;
+    return JSON.parse(config_raw);
   } catch (e){
-    is_file = false;
+    if (! e instanceof SyntaxError) {
+      throw e;
+    }
   }
-  let content;
-  if (is_file) {
-    content = await fs.readFile(config_raw);
-  } else {
-    content = config_raw;
-  }
+  const content = await fs.readFile(config_raw);
   return JSON.parse(content);
 }
 
